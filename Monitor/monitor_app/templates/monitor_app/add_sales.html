@@ -1,0 +1,517 @@
+{% extends 'monitor_app/base.html' %}
+
+{% block title %}Add Sales - WiFi Vendo System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-4">
+                    <i class="fas fa-plus-circle me-2"></i>Add New Sales Record
+                </h5>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            {{ field.label }}
+                            {% if field.name == 'date' %}
+                                <small class="text-muted">(Philippine Time)</small>
+                            {% endif %}
+                        </label>
+                        {{ field.errors }}
+                        
+                        {% if field.name == 'wifi_vendo' %}
+                            <!-- Enhanced searchable select field -->
+                            <div class="searchable-select-container">
+                                {{ field }}
+                                <div id="search-results" class="search-results"></div>
+                            </div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                        
+                        {% if field.help_text %}
+                        <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        
+                        {% if field.name == 'date' %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Current time: <span id="current-ph-time"></span>
+                            <small class="text-muted d-block">(Date and time are automatically set and cannot be edited)</small>
+                        </div>
+                        {% elif field.name == 'overall_profit' %}
+                        <div class="form-text">
+                            <i class="fas fa-calculator me-1"></i>
+                            <small class="text-muted">Automatically calculated: Amount Collected - Share</small>
+                        </div>
+                        {% elif field.name == 'vendo_status' %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <small class="text-muted">Optional: Update the status of the selected WiFi vendo</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Sales Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add Bootstrap classes to form fields
+    document.querySelectorAll('input, select').forEach(element => {
+        element.classList.add('form-control');
+    });
+
+    // Philippine timezone handling
+    function updatePhilippineTime() {
+        const now = new Date();
+        const phTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+        const timeString = phTime.toLocaleString('en-PH', {
+            year: 'numeric',
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        const currentTimeElement = document.getElementById('current-ph-time');
+        if (currentTimeElement) {
+            currentTimeElement.textContent = timeString;
+        }
+        
+        // Update datetime-local input to Philippine time if it's empty or default
+        const dateInput = document.getElementById('id_date');
+        if (dateInput && (!dateInput.value || dateInput.value === '')) {
+            const phDateTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+            const year = phDateTime.getFullYear();
+            const month = String(phDateTime.getMonth() + 1).padStart(2, '0');
+            const day = String(phDateTime.getDate()).padStart(2, '0');
+            const hours = String(phDateTime.getHours()).padStart(2, '0');
+            const minutes = String(phDateTime.getMinutes()).padStart(2, '0');
+            
+            dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+    }
+
+    // Overall Profit Calculation
+    function calculateOverallProfit() {
+        const amountInput = document.getElementById('id_amount');
+        const shareInput = document.getElementById('id_share');
+        const profitInput = document.getElementById('id_overall_profit');
+        
+        if (amountInput && shareInput && profitInput) {
+            const amount = parseFloat(amountInput.value) || 0;
+            const share = parseFloat(shareInput.value) || 0;
+            const profit = amount - share;
+            
+            // Set the calculated value
+            profitInput.value = profit >= 0 ? profit.toFixed(2) : '0.00';
+            
+            // Add visual feedback for negative results
+            if (profit < 0) {
+                profitInput.style.color = '#dc3545';
+                profitInput.style.fontWeight = 'bold';
+            } else {
+                profitInput.style.color = '#28a745';
+                profitInput.style.fontWeight = 'normal';
+            }
+        }
+    }
+
+    // Update WiFi Vendo Status
+    function updateVendoStatus(vendoId) {
+        const statusSelect = document.getElementById('id_vendo_status');
+        if (!statusSelect || !vendoId) return;
+        
+        // Get the selected option from the original select
+        const vendoSelect = document.querySelector('#id_wifi_vendo');
+        const selectedOption = vendoSelect.querySelector(`option[value="${vendoId}"]`);
+        
+        if (selectedOption) {
+            // Extract status from the option text (format: "Name - Location (Status)")
+            const optionText = selectedOption.textContent;
+            const statusMatch = optionText.match(/\(([^)]+)\)$/);
+            
+            if (statusMatch) {
+                const currentStatus = statusMatch[1].toLowerCase();
+                // Map status display names to form choice values
+                const statusMap = {
+                    'active': 'active',
+                    'maintenance': 'maintenance', 
+                    'inactive': 'inactive'
+                };
+                
+                if (statusMap[currentStatus]) {
+                    statusSelect.value = statusMap[currentStatus];
+                }
+            }
+        }
+    }
+
+    // Enhanced Searchable Select for WiFi Vendo
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Philippine time
+        updatePhilippineTime();
+        
+        // Update time every second
+        setInterval(updatePhilippineTime, 1000);
+        
+        // Set up automatic profit calculation
+        const amountInput = document.getElementById('id_amount');
+        const shareInput = document.getElementById('id_share');
+        
+        if (amountInput && shareInput) {
+            // Calculate on input change
+            amountInput.addEventListener('input', calculateOverallProfit);
+            shareInput.addEventListener('input', calculateOverallProfit);
+            
+            // Calculate on blur (when user leaves the field)
+            amountInput.addEventListener('blur', calculateOverallProfit);
+            shareInput.addEventListener('blur', calculateOverallProfit);
+            
+            // Initial calculation if values exist
+            calculateOverallProfit();
+        }
+        
+        // Update status field if vendo is already selected
+        const initialVendoSelect = document.querySelector('#id_wifi_vendo');
+        if (initialVendoSelect && initialVendoSelect.value) {
+            updateVendoStatus(initialVendoSelect.value);
+        }
+        
+        const vendoSelect = document.querySelector('#id_wifi_vendo');
+        
+        if (vendoSelect) {
+            // Store original options
+            const originalOptions = Array.from(vendoSelect.options);
+            
+            // Convert select to searchable input with dropdown
+            const container = vendoSelect.parentElement;
+            const inputElement = document.createElement('input');
+            
+            // Configure the input
+            inputElement.type = 'text';
+            inputElement.className = 'form-control searchable-input';
+            inputElement.placeholder = 'Type to search WiFi vendos...';
+            inputElement.autocomplete = 'off';
+            
+            // Create dropdown for results
+            const dropdown = document.createElement('div');
+            dropdown.className = 'search-dropdown';
+            dropdown.style.display = 'none';
+            
+            // Hide original select and add our elements
+            vendoSelect.style.display = 'none';
+            container.insertBefore(inputElement, vendoSelect);
+            container.insertBefore(dropdown, vendoSelect.nextSibling);
+            
+            let selectedValue = '';
+            let isDropdownOpen = false;
+            
+            // Function to populate dropdown
+            function populateDropdown(searchTerm = '') {
+                dropdown.innerHTML = '';
+                const filteredOptions = originalOptions.filter(option => {
+                    if (!option.value) return false; // Skip empty option
+                    return option.text.toLowerCase().includes(searchTerm.toLowerCase());
+                });
+                
+                if (filteredOptions.length === 0) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'dropdown-item text-muted';
+                    noResults.textContent = 'No vendos found';
+                    dropdown.appendChild(noResults);
+                } else {
+                    filteredOptions.forEach(option => {
+                        const item = document.createElement('div');
+                        item.className = 'dropdown-item';
+                        item.textContent = option.text;
+                        item.dataset.value = option.value;
+                        
+                        item.addEventListener('click', function() {
+                            selectOption(option.value, option.text);
+                        });
+                        
+                        dropdown.appendChild(item);
+                    });
+                }
+            }
+            
+            // Function to select an option
+            function selectOption(value, text) {
+                selectedValue = value;
+                inputElement.value = text;
+                vendoSelect.value = value;
+                dropdown.style.display = 'none';
+                isDropdownOpen = false;
+                
+                // Remove any validation errors
+                inputElement.classList.remove('is-invalid');
+                
+                // Update status field with current vendo status
+                updateVendoStatus(value);
+            }
+            
+            // Input event listeners
+            inputElement.addEventListener('input', function() {
+                const searchTerm = this.value;
+                populateDropdown(searchTerm);
+                dropdown.style.display = 'block';
+                isDropdownOpen = true;
+                
+                // Check if input matches any option exactly
+                const exactMatch = originalOptions.find(option => 
+                    option.text.toLowerCase() === searchTerm.toLowerCase()
+                );
+                
+                if (exactMatch) {
+                    selectedValue = exactMatch.value;
+                    vendoSelect.value = exactMatch.value;
+                    updateVendoStatus(exactMatch.value);
+                } else {
+                    selectedValue = '';
+                    vendoSelect.value = '';
+                }
+            });
+            
+            inputElement.addEventListener('focus', function() {
+                populateDropdown(this.value);
+                dropdown.style.display = 'block';
+                isDropdownOpen = true;
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!container.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                    isDropdownOpen = false;
+                }
+            });
+            
+            // Keyboard navigation
+            inputElement.addEventListener('keydown', function(e) {
+                const items = dropdown.querySelectorAll('.dropdown-item:not(.text-muted)');
+                let selectedIndex = Array.from(items).findIndex(item => 
+                    item.classList.contains('selected')
+                );
+                
+                switch(e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (!isDropdownOpen) {
+                            dropdown.style.display = 'block';
+                            isDropdownOpen = true;
+                            populateDropdown(this.value);
+                        } else {
+                            items.forEach(item => item.classList.remove('selected'));
+                            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                            if (items[selectedIndex]) {
+                                items[selectedIndex].classList.add('selected');
+                            }
+                        }
+                        break;
+                        
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        items.forEach(item => item.classList.remove('selected'));
+                        selectedIndex = Math.max(selectedIndex - 1, 0);
+                        if (items[selectedIndex]) {
+                            items[selectedIndex].classList.add('selected');
+                        }
+                        break;
+                        
+                    case 'Enter':
+                        e.preventDefault();
+                        const selectedItem = dropdown.querySelector('.dropdown-item.selected');
+                        if (selectedItem && selectedItem.dataset.value) {
+                            selectOption(selectedItem.dataset.value, selectedItem.textContent);
+                        }
+                        break;
+                        
+                    case 'Escape':
+                        dropdown.style.display = 'none';
+                        isDropdownOpen = false;
+                        break;
+                }
+            });
+            
+            // Form validation
+            const form = vendoSelect.closest('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    if (!selectedValue) {
+                        e.preventDefault();
+                        inputElement.classList.add('is-invalid');
+                        inputElement.focus();
+                    }
+                });
+            }
+        }
+    });
+</script>
+
+<style>
+    .searchable-select-container {
+        position: relative;
+    }
+    
+    .searchable-input {
+        border: 1px solid #ced4da;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .searchable-input:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .searchable-input.is-invalid {
+        border-color: #dc3545;
+    }
+    
+    .search-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ced4da;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #f8f9fa;
+        transition: background-color 0.15s ease-in-out;
+    }
+    
+    .dropdown-item:hover,
+    .dropdown-item.selected {
+        background-color: #f8f9fa;
+    }
+    
+    .dropdown-item:last-child {
+        border-bottom: none;
+    }
+    
+    .dropdown-item.text-muted {
+        cursor: default;
+        font-style: italic;
+    }
+    
+    .dropdown-item.text-muted:hover {
+        background-color: transparent;
+    }
+    
+    #current-ph-time {
+        font-weight: 500;
+        color: #0d6efd;
+    }
+
+    /* Style for readonly fields */
+    input[readonly] {
+        background-color: #f8f9fa !important;
+        cursor: not-allowed !important;
+        opacity: 0.8;
+    }
+    
+    input[readonly]:focus {
+        box-shadow: none !important;
+        border-color: #ced4da !important;
+    }
+    
+    /* Style for calculated overall profit field */
+    #id_overall_profit {
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+    
+    /* Style for report textarea */
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    textarea:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+        .card {
+            margin: 0.5rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        textarea {
+            font-size: 16px; /* Prevents zoom on iOS */
+            min-height: 100px;
+            padding: 0.5rem;
+        }
+        
+        .form-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+        
+        .form-text {
+            font-size: 0.8rem;
+        }
+        
+        .searchable-input {
+            font-size: 16px; /* Prevents zoom on iOS */
+        }
+        
+        .search-dropdown {
+            max-height: 150px; /* Smaller dropdown on mobile */
+        }
+    }
+    
+    /* Extra small devices */
+    @media (max-width: 480px) {
+        .col-md-8 {
+            padding: 0;
+        }
+        
+        .card {
+            border-radius: 0;
+            margin: 0;
+        }
+        
+        textarea {
+            min-height: 120px;
+        }
+        
+        .btn {
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %} 

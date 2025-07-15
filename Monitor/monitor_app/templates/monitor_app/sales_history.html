@@ -1,0 +1,53 @@
+{% extends 'monitor_app/base.html' %}
+
+{% block title %}Sales History - WiFi Vendo System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-4">
+            <i class="fas fa-history me-2"></i>Collection History
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>WiFi Vendo</th>
+                        {% if is_admin %}
+                        <th>Collector</th>
+                        {% endif %}
+                        <th>Report</th>
+                        <th>Amount Collected</th>
+                        <th>Shares</th>
+                        <th>Profit</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in sales_records %}
+                    <tr>
+                        <td>{{ record.date|date:"F d, Y" }} at {{ record.date|time:"g:i A" }}</td>
+                        <td>{{ record.wifi_vendo.name }}</td>
+                        {% if is_admin %}
+                        <td>{{ record.collector.user.get_full_name }}</td>
+                        {% endif %}
+                        <td>{{ record.report }}</td>
+                        <td>₱{{ record.amount|floatformat:2 }}</td>
+                        <td>₱{{ record.share|floatformat:2 }}</td>
+                        <td>₱{{ record.overall_profit|floatformat:2 }}</td>
+                        <td>
+                        <span class="badge bg-success">Completed</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if is_admin %}5{% else %}4{% endif %}" class="text-center text-muted">No sales records found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,405 @@
+{% extends 'monitor_app/base.html' %}
+
+{% block title %}Dashboard - WiFi Vendo System{% endblock %}
+
+{% block content %}
+{%if not is_admin %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-user-circle me-2"></i>
+                    
+                        Welcome, {{ collector.user.get_full_name }}
+                    
+                </h5>
+                
+                <p class="card-text text-muted">
+                    <i class="fas fa-phone me-2"></i>{{ collector.phone_number }}
+                </p>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class="row">
+    {% if is_admin %}
+    <div class="d-flex mb-4" style="height: 400px; min-height: 400px; max-height: 400px;">
+        <!-- Left: The Graph -->
+        <div class="flex-grow-1 me-3" style="min-width:0; height: 100%;">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column" style="height: 100%;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Monthly Profit Overview</h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary active" id="chartTypeBar">Bar</button>
+                            <button type="button" class="btn btn-outline-primary" id="chartTypeLine">Line</button>
+                        </div>
+                    </div>
+                    <div style="position: relative; flex:1; min-height: 0; height: 100%;">
+                        <canvas id="salesChart" style="height:100% !important; width:100% !important;"></canvas>
+                        <div id="chartMessage" class="text-center text-muted" style="display: none; padding-top: 120px;">
+                            <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                            <p>No sales data available for the chart</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Right: Sales Cards -->
+        <div class="d-flex flex-column justify-content-between" style="width: 300px; min-width: 220px; height: 100%;">
+            <div class="card bg-primary text-white mb-3 flex-fill" style="min-height:0; height: 32%;">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center h-100">
+                    <h5 class="card-title">
+                        <i class="fas fa-money-bill-wave me-2"></i>Overall Sales
+                    </h5>
+                    <h2 class="card-text">₱{{ total_sales|floatformat:2 }}</h2>
+                </div>
+            </div>
+            <div class="card bg-success text-white mb-3 flex-fill" style="min-height:0; height: 32%;">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center h-100">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-line me-2"></i>Latest Sales
+                    </h5>
+                    <h2 class="card-text">₱{{ today_sales|default:"0.00"|floatformat:2 }}</h2>
+                </div>
+            </div>
+            <div class="card bg-info text-white flex-fill" style="min-height:0; height: 32%;">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center h-100">
+                    <h5 class="card-title">
+                        <i class="fas fa-wifi me-2"></i>WiFi Vendos
+                    </h5>
+                    <h2 class="card-text">{{ total_vendos|default:"0" }}</h2>
+                    <small>Active: {{ active_vendos|default:"0" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="row mt-4 align-items-stretch">
+        {% if is_admin %}
+        <div class="col-md-4 h-100">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Sales</h5>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="salesSearch" placeholder="Search vendo name...">
+                    </div>
+                    <div class="list-group" style="max-height: 300px; overflow-y: auto;">
+                        {% for record in sales_records|slice:":4" %}
+                        <div class="list-group-item sales-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 vendo-name">{{ record.wifi_vendo.name }}</h6>
+                                <small>{{ record.date }}</small>
+                            </div>
+                            <p class="mb-1">₱{{ record.overall_profit|floatformat:2 }}</p>
+                            <small class="text-muted">Collector: {{ record.collector.user.get_full_name }}</small><br>
+                            <small class="text-muted">Report: {{ record.report }}</small>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">No recent sales</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 h-100">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Collectors List</h5>
+                        <a href="{% url 'monitor_app:add_collector' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Add Collector
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone Number</th>
+                                    <th>Address</th>
+                                    <th>Status</th>
+                                    <th>Total Sales</th>
+                                    <th>Joined Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for collector in collectors %}
+                                <tr>
+                                    <td>{{ collector.user.get_full_name }}</td>
+                                    <td>{{ collector.phone_number }}</td>
+                                    <td>{{ collector.address }}</td>
+                                    <td>
+                                        {% if collector.user.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>₱{{ collector.total_sales|default:"0.00"|floatformat:2 }}</td>
+                                    <td>{{ collector.created_at|date:"M d, Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">No collectors found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 h-100">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">WiFi Vendos</h5>
+                        <a href="{% url 'monitor_app:add_vendo' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Add Vendo
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Total Sales</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vendo in wifi_vendos %}
+                                <tr>
+                                    <td>{{ vendo.name }}</td>
+                                    <td>{{ vendo.location }}</td>
+                                    <td>
+                                        {% if vendo.status == 'active' %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% elif vendo.status == 'maintenance' %}
+                                        <span class="badge bg-warning">Maintenance</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>₱{{ vendo.total_sales|default:"0.00"|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No WiFi vendos found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if is_admin %}
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize monthly sales chart for admin users
+        const chartElement = document.getElementById('salesChart');
+        const chartTypeBar = document.getElementById('chartTypeBar');
+        const chartTypeLine = document.getElementById('chartTypeLine');
+        
+        if (chartElement) {
+            const ctx = chartElement.getContext('2d');
+            let chart = null;
+            
+            try {
+                const monthlyData = {{ monthly_sales_json|safe }};
+                console.log('Monthly data:', monthlyData);
+                
+                if (!monthlyData || Object.keys(monthlyData).length === 0) {
+                    console.log('No monthly data available');
+                    document.getElementById('salesChart').style.display = 'none';
+                    document.getElementById('chartMessage').style.display = 'block';
+                    return;
+                }
+                
+                // Sort the months chronologically (January to December)
+                const sortedEntries = Object.entries(monthlyData).sort((a, b) => {
+                    return new Date(a[0]) - new Date(b[0]);
+                });
+                
+                const labels = sortedEntries.map(entry => entry[0]);
+                const data = sortedEntries.map(entry => parseFloat(entry[1]) || 0);
+                
+                console.log('Chart labels:', labels);
+                console.log('Chart data:', data);
+                
+                // Create gradient for better visual appeal
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(52, 152, 219, 0.8)');
+                gradient.addColorStop(1, 'rgba(52, 152, 219, 0.2)');
+                
+                const lineGradient = ctx.createLinearGradient(0, 0, 0, 400);
+                lineGradient.addColorStop(0, 'rgba(46, 204, 113, 0.8)');
+                lineGradient.addColorStop(1, 'rgba(46, 204, 113, 0.2)');
+                
+                function createChart(type = 'bar') {
+                    if (chart) {
+                        chart.destroy();
+                    }
+                    
+                    const config = {
+                        type: type,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Monthly Profit (₱)',
+                                data: data,
+                                backgroundColor: type === 'bar' ? gradient : 'rgba(52, 152, 219, 0.8)',
+                                borderColor: type === 'bar' ? 'rgba(52, 152, 219, 1)' : 'rgba(46, 204, 113, 1)',
+                                borderWidth: type === 'bar' ? 2 : 3,
+                                borderRadius: type === 'bar' ? 8 : 0,
+                                borderSkipped: false,
+                                fill: type === 'line' ? true : false,
+                                tension: type === 'line' ? 0.4 : 0,
+                                pointBackgroundColor: 'rgba(46, 204, 113, 1)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 6,
+                                pointHoverRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                intersect: false,
+                                mode: 'index'
+                            },
+                            animation: {
+                                duration: 1000,
+                                easing: 'easeInOutQuart'
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.1)',
+                                        drawBorder: false
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return '₱' + value.toLocaleString('en-US', {
+                                                minimumFractionDigits: 0,
+                                                maximumFractionDigits: 0
+                                            });
+                                        },
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top',
+                                    labels: {
+                                        usePointStyle: true,
+                                        padding: 20,
+                                        font: {
+                                            size: 14
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                    titleColor: 'white',
+                                    bodyColor: 'white',
+                                    borderColor: 'rgba(52, 152, 219, 1)',
+                                    borderWidth: 1,
+                                    cornerRadius: 8,
+                                    displayColors: false,
+                                    callbacks: {
+                                        title: function(context) {
+                                            return context[0].label;
+                                        },
+                                        label: function(context) {
+                                            return 'Total Profit: ₱' + context.parsed.y.toLocaleString('en-US', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    };
+                    
+                    chart = new Chart(ctx, config);
+                }
+                
+                // Initialize with bar chart
+                createChart('bar');
+                
+                // Chart type toggle functionality
+                if (chartTypeBar && chartTypeLine) {
+                    chartTypeBar.addEventListener('click', function() {
+                        createChart('bar');
+                        chartTypeBar.classList.add('active');
+                        chartTypeLine.classList.remove('active');
+                    });
+                    
+                    chartTypeLine.addEventListener('click', function() {
+                        createChart('line');
+                        chartTypeLine.classList.add('active');
+                        chartTypeBar.classList.remove('active');
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error initializing chart:', error);
+                chartElement.parentElement.innerHTML = '<p class="text-muted text-center">Unable to load chart data</p>';
+            }
+        }
+    });
+</script>
+{% endif %}
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality for sales/collections
+        const searchInput = document.getElementById('salesSearch');
+        const salesItems = document.querySelectorAll('.sales-item');
+
+        if (searchInput && salesItems.length > 0) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                salesItems.forEach(item => {
+                    const vendoName = item.querySelector('.vendo-name');
+                    if (vendoName && vendoName.textContent.toLowerCase().includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %} 
