@@ -27,7 +27,6 @@
     <div class="sidebar-content">
         <div class="sidebar-nav">
             <!-- Navigation Groups -->
-             {% if is_admin %}
             <div class="nav-group">
                 <div class="nav-group-label">Main</div>
                 <ul class="nav flex-column">
@@ -43,7 +42,6 @@
                     </li>
                 </ul>
             </div>
-            {% endif %}
 
             {% if user.is_staff %}
             <div class="nav-group">

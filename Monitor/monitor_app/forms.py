@@ -20,6 +20,7 @@ class CollectorForm(forms.ModelForm):
     first_name = forms.CharField(max_length=30)
     last_name = forms.CharField(max_length=30)
     email = forms.EmailField()
+    address = forms.CharField(widget=forms.TextInput())
 
     class Meta:
         model = Collector
