@@ -96,6 +96,7 @@
         .mobile-circle-toggle.active {
             box-shadow: 0 6px 25px rgba(0, 123, 255, 0.5);
             background: linear-gradient(135deg, #0056b3, #003d82);
+            transform: scale(1.05);
         }
         .mobile-circle-toggle:hover {
             transform: scale(1.1);
@@ -120,6 +121,27 @@
         .circle-line {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             transform-origin: center;
+        }
+        
+        /* Enhanced mobile toggle button animations */
+        .mobile-circle-toggle {
+            animation: pulse 2s infinite;
+        }
+        
+        .mobile-circle-toggle.active {
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(0, 123, 255, 0.5);
+            }
+            100% {
+                box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            }
         }
         
         /* Mobile Backdrop */
@@ -168,6 +190,15 @@
         @media (max-width: 768px) {
             .mobile-circle-toggle {
                 display: flex !important;
+            }
+            .mobile-circle-toggle.active {
+                background: linear-gradient(135deg, #dc3545, #c82333);
+                box-shadow: 0 6px 25px rgba(220, 53, 69, 0.5);
+                border-color: rgba(255, 255, 255, 0.4);
+            }
+            .mobile-circle-toggle.active:hover {
+                background: linear-gradient(135deg, #c82333, #a71e2a);
+                transform: scale(1.1);
             }
             .sidebar {
                 position: fixed;
@@ -643,6 +674,15 @@
                     mobileBackdrop.classList.add('show');
                     document.body.style.overflow = 'hidden';
                 }
+                
+                // Add a small delay to ensure smooth animation
+                setTimeout(() => {
+                    if (mobileCircleToggle.classList.contains('active')) {
+                        mobileCircleToggle.style.transform = 'scale(1.05)';
+                    } else {
+                        mobileCircleToggle.style.transform = 'scale(1)';
+                    }
+                }, 100);
             }
             
             // Event listeners
@@ -669,6 +709,29 @@
                         toggleMobileSidebar();
                     }
                 });
+            }
+            
+            // Add touch gesture support for mobile
+            let touchStartY = 0;
+            let touchEndY = 0;
+            
+            document.addEventListener('touchstart', function(e) {
+                touchStartY = e.changedTouches[0].screenY;
+            });
+            
+            document.addEventListener('touchend', function(e) {
+                touchEndY = e.changedTouches[0].screenY;
+                handleSwipe();
+            });
+            
+            function handleSwipe() {
+                const swipeThreshold = 50;
+                const swipeDistance = touchEndY - touchStartY;
+                
+                // Swipe down to close sidebar
+                if (swipeDistance > swipeThreshold && sidebar.classList.contains('show')) {
+                    toggleMobileSidebar();
+                }
             }
             
             // Handle window resize
