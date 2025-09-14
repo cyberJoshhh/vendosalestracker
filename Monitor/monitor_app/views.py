@@ -157,7 +157,7 @@ def dashboard(request):
         'today_sales_date': most_recent_date if most_recent_record else None,
         'monthly_sales': monthly_sales,
         'monthly_sales_json': monthly_sales_json,
-        'sales_records': sales_records[:5],  # Get only the 5 most recent records
+        'sales_records': sales_records[:15],  # Get the 15 most recent records
         'collectors': collectors,
         'total_collectors': total_collectors,
         'active_collectors': active_collectors,
@@ -424,7 +424,7 @@ def reports(request):
 
 @login_required
 def recent_sales_view(request):
-    sales_records = SalesRecord.objects.all().order_by('-date')[:20] # Limit to 20 recent sales
+    sales_records = SalesRecord.objects.all().order_by('-date')[:50] # Limit to 50 recent sales
     return render(request, 'monitor_app/recent_sales.html', {'sales_records': sales_records})
 
 @login_required
