@@ -13,4 +13,7 @@ urlpatterns = [
     path('add-collector/', views.add_collector, name='add_collector'),
     path('add-vendo/', views.add_vendo, name='add_vendo'),
     path('reports/', views.reports, name='reports'),
+    path('recent-sales/', views.recent_sales_view, name='recent_sales'),
+    path('collectors/', views.collectors_list_view, name='collectors_list'),
+    path('wifi-vendos/', views.wifi_vendos_list_view, name='wifi_vendos_list'),
 ]

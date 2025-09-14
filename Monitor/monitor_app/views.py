@@ -421,3 +421,22 @@ def reports(request):
     }
     
     return render(request, 'monitor_app/reports.html', context)
+
+@login_required
+def recent_sales_view(request):
+    sales_records = SalesRecord.objects.all().order_by('-date')[:20] # Limit to 20 recent sales
+    return render(request, 'monitor_app/recent_sales.html', {'sales_records': sales_records})
+
+@login_required
+def collectors_list_view(request):
+    collectors = Collector.objects.all().annotate(
+        total_sales=Sum(Coalesce('salesrecord__amount', 0, output_field=DecimalField()))
+    )
+    return render(request, 'monitor_app/collectors_list.html', {'collectors': collectors})
+
+@login_required
+def wifi_vendos_list_view(request):
+    wifi_vendos = WifiVendo.objects.all().annotate(
+        total_sales=Sum(Coalesce('salesrecord__overall_profit', 0, output_field=DecimalField()))
+    )
+    return render(request, 'monitor_app/wifi_vendos_list.html', {'wifi_vendos': wifi_vendos})
