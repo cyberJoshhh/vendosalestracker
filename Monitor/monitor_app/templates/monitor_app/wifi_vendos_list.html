@@ -1,0 +1,43 @@
+{% extends 'monitor_app/base.html' %}
+
+{% block title %}WiFi Vendos List - WiFi Vendo System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        {% include 'monitor_app/_wifi_vendos_list_card.html' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('vendosSearch'); // Assuming you'll add an id to your search input
+    const table = document.querySelector('.table');
+    const rows = table.getElementsByTagName('tr');
+
+    if (searchInput && table && rows.length > 1) {
+        searchInput.addEventListener('keyup', function() {
+            const filter = searchInput.value.toLowerCase();
+
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                if (cells.length > 0) {
+                    let rowText = '';
+                    for (let j = 0; j < cells.length; j++) {
+                        rowText += (cells[j].textContent || cells[j].innerText) + ' ';
+                    }
+
+                    if (rowText.toLowerCase().indexOf(filter) > -1) {
+                        rows[i].style.display = '';
+                    } else {
+                        rows[i].style.display = 'none';
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

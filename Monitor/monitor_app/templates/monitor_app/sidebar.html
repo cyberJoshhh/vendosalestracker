@@ -58,12 +58,42 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'add_vendo' %}active{% endif %}" 
+                        <a class="nav-link {% if request.resolver_match.url_name == 'add_vendo' %}active{% endif %}"
                            href="{% url 'monitor_app:add_vendo' %}">
                             <div class="nav-icon">
                                 <i class="fas fa-wifi"></i>
                             </div>
                             <span class="nav-text">Add Vendo</span>
+                            <div class="nav-indicator"></div>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'recent_sales' %}active{% endif %}"
+                           href="{% url 'monitor_app:recent_sales' %}">
+                            <div class="nav-icon">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <span class="nav-text">Recent Sales</span>
+                            <div class="nav-indicator"></div>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'collectors_list' %}active{% endif %}"
+                           href="{% url 'monitor_app:collectors_list' %}">
+                            <div class="nav-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <span class="nav-text">Collectors List</span>
+                            <div class="nav-indicator"></div>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'wifi_vendos_list' %}active{% endif %}"
+                           href="{% url 'monitor_app:wifi_vendos_list' %}">
+                            <div class="nav-icon">
+                                <i class="fas fa-list-alt"></i>
+                            </div>
+                            <span class="nav-text">WiFi Vendos List</span>
                             <div class="nav-indicator"></div>
                         </a>
                     </li>

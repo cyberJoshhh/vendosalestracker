@@ -1,0 +1,36 @@
+{% extends 'monitor_app/base.html' %}
+
+{% block title %}Recent Sales - WiFi Vendo System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        {% include 'monitor_app/_recent_sales_card.html' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality for sales/collections
+        const searchInput = document.getElementById('salesSearch');
+        const salesItems = document.querySelectorAll('.sales-item');
+
+        if (searchInput && salesItems.length > 0) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+
+                salesItems.forEach(item => {
+                    const vendoName = item.querySelector('.vendo-name');
+                    if (vendoName && vendoName.textContent.toLowerCase().includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}
