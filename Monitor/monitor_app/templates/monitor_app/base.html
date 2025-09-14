@@ -202,99 +202,36 @@
             }
             .sidebar {
                 position: fixed;
-                top: 85px; /* Start below the toggle button with small gap */
-                left: 0;
-                width: 100%;
-                height: auto;
-                min-height: auto;
+                top: 0;
+                left: -280px; /* Hidden by default */
+                width: 280px;
+                height: 100%;
                 z-index: 1050;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-                margin-left: 0;
-                margin-bottom: 0;
-                transform: translateY(-100%);
-                transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: left 0.3s ease-in-out;
+                box-shadow: 0 0 20px rgba(0,0,0,0.2);
             }
             .sidebar.show {
-                transform: translateY(0);
+                left: 0;
             }
             .sidebar-header {
-                display: none !important;
-            }
-            .sidebar.collapsed .sidebar-content {
-                display: none;
-            }
-            .sidebar:not(.collapsed) .sidebar-content {
-                display: block;
-                animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                display: flex !important; /* Show header on mobile */
             }
             .sidebar-content {
-                max-height: calc(100vh - 125px); /* Account for toggle button space */
+                max-height: calc(100vh - 80px);
                 overflow-y: auto;
-                padding-top: 1rem;
-                background: linear-gradient(135deg, #343a40, #495057);
-                border-bottom-left-radius: 15px;
-                border-bottom-right-radius: 15px;
-                border-top-left-radius: 15px;
-                border-top-right-radius: 15px;
-            }
-            @keyframes slideDown {
-                from {
-                    opacity: 0;
-                    transform: translateY(-10px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
             }
             .main-content {
                 margin-left: 0 !important;
                 width: 100%;
-                padding: 90px 15px 15px 15px; /* Top padding for circle button */
-                margin-top: 0;
+                padding: 20px;
+                transition: margin-left 0.3s ease-in-out;
             }
-            .sidebar .nav-link {
-                padding: 0.875rem 1rem;
-                font-size: 0.95rem;
-                border-radius: 12px;
-                margin: 0 0.5rem 0.25rem 0.5rem;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
+            .main-content.sidebar-open {
+                margin-left: 280px;
             }
-            .sidebar .nav-link:hover {
-                background: rgba(255, 255, 255, 0.1);
-                transform: translateX(5px);
-            }
-            .sidebar .nav-link .nav-icon {
-                width: 20px;
-                height: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .nav-group-label {
-                padding-left: 1.5rem;
-                margin-bottom: 0.5rem;
-            }
-            /* Better touch targets */
-            .btn {
-                min-height: 44px;
-                min-width: 44px;
-            }
-            /* Card adjustments for mobile */
-            .card {
-                margin-bottom: 15px;
-            }
-            .table-responsive {
-                font-size: 0.875rem;
-            }
-            /* Ensure proper spacing */
-            .container-fluid {
-                padding: 0;
-            }
-            .d-flex {
-                flex-direction: column;
+            .mobile-backdrop.show {
+                display: block;
+                opacity: 1;
             }
         }
         
@@ -657,32 +594,16 @@
             
             // Toggle mobile sidebar
             function toggleMobileSidebar() {
-                const isShowing = sidebar.classList.contains('show');
-                
-                if (isShowing) {
-                    // Hide sidebar
-                    sidebar.classList.remove('show');
-                    sidebar.classList.add('collapsed');
-                    mobileCircleToggle.classList.remove('active');
-                    mobileBackdrop.classList.remove('show');
-                    document.body.style.overflow = '';
-                } else {
-                    // Show sidebar
-                    sidebar.classList.add('show');
-                    sidebar.classList.remove('collapsed');
-                    mobileCircleToggle.classList.add('active');
-                    mobileBackdrop.classList.add('show');
+                sidebar.classList.toggle('show');
+                mobileCircleToggle.classList.toggle('active');
+                mobileBackdrop.classList.toggle('show');
+                mainContent.classList.toggle('sidebar-open');
+
+                if (sidebar.classList.contains('show')) {
                     document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
                 }
-                
-                // Add a small delay to ensure smooth animation
-                setTimeout(() => {
-                    if (mobileCircleToggle.classList.contains('active')) {
-                        mobileCircleToggle.style.transform = 'scale(1.05)';
-                    } else {
-                        mobileCircleToggle.style.transform = 'scale(1)';
-                    }
-                }, 100);
             }
             
             // Event listeners
