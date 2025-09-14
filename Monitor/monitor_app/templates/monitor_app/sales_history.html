@@ -5,11 +5,16 @@
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h5 class="card-title mb-4">
-            <i class="fas fa-history me-2"></i>Collection History
-        </h5>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>Collection History
+            </h5>
+            <div class="w-50">
+                <input type="text" class="form-control" id="salesHistorySearch" placeholder="Search by vendo, collector, or report...">
+            </div>
+        </div>
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover" id="salesHistoryTable">
                 <thead>
                     <tr>
                         <th>Date & Time</th>
@@ -50,4 +55,47 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('salesHistorySearch');
+    const table = document.getElementById('salesHistoryTable');
+    const rows = table.getElementsByTagName('tr');
+
+    if (searchInput && table && rows.length > 1) {
+        searchInput.addEventListener('keyup', function() {
+            const filter = searchInput.value.toLowerCase();
+
+            // Start from 1 to skip the table header row
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                if (cells.length > 0) {
+                    // Combine text from all cells we want to search in
+                    let rowText = '';
+                    // Vendo name is at index 1
+                    rowText += cells[1].textContent || cells[1].innerText;
+
+                    {% if is_admin %}
+                    // Collector name is at index 2
+                    rowText += ' ' + (cells[2].textContent || cells[2].innerText);
+                    // Report is at index 3
+                    rowText += ' ' + (cells[3].textContent || cells[3].innerText);
+                    {% else %}
+                    // Report is at index 2
+                    rowText += ' ' + (cells[2].textContent || cells[2].innerText);
+                    {% endif %}
+
+                    if (rowText.toLowerCase().indexOf(filter) > -1) {
+                        rows[i].style.display = '';
+                    } else {
+                        rows[i].style.display = 'none';
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

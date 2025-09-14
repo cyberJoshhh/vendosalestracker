@@ -175,6 +175,10 @@
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
                         <h5 class="card-title mb-0">Monthly Profit Overview</h5>
                         <div class="btn-group btn-group-sm mt-2 mt-md-0" role="group">
+                            <select class="form-select form-select-sm" id="monthFilter" style="width: auto;">
+                                <option value="">All Months</option>
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
                             <button type="button" class="btn btn-outline-primary active" id="chartTypeBar">Bar</button>
                             <button type="button" class="btn btn-outline-primary" id="chartTypeLine">Line</button>
                         </div>
@@ -222,123 +226,13 @@
     <div class="row mt-2 align-items-stretch mobile-cards-row">
         {% if is_admin %}
         <div class="col-md-4 col-12 mb-0 mb-md-3 h-100">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Recent Sales</h5>
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="salesSearch" placeholder="Search vendo name...">
-                    </div>
-                    <div class="list-group mobile-list-group" style="max-height: 300px; overflow-y: auto;">
-                        {% for record in sales_records%}
-                        <div class="list-group-item sales-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1 vendo-name">{{ record.wifi_vendo.name }}</h6>
-                                <small>{{ record.date }}</small>
-                            </div>
-                            <p class="mb-1">₱{{ record.overall_profit|floatformat:2 }}</p>
-                            <small class="text-muted">Collector: {{ record.collector.user.get_full_name }}</small><br>
-                            <small class="text-muted">Report: {{ record.report }}</small>
-                        </div>
-                        {% empty %}
-                        <p class="text-muted">No recent sales</p>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
+            {% include 'monitor_app/_recent_sales_card.html' %}
         </div>
         <div class="col-md-4 col-12 mb-0 mb-md-3 h-100">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-                        <h5 class="card-title mb-0">Collectors List</h5>
-                        <a href="{% url 'monitor_app:add_collector' %}" class="btn btn-primary btn-sm mt-2 mt-md-0">
-                            <i class="fas fa-plus me-1"></i>Add Collector
-                        </a>
-                    </div>
-                    <div class="table-responsive dashboard-table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Phone Number</th>
-                                    <th>Address</th>
-                                    <th>Status</th>
-                                    <th>Total Sales</th>
-                                    <th>Joined Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for collector in collectors %}
-                                <tr>
-                                    <td>{{ collector.user.get_full_name }}</td>
-                                    <td>{{ collector.phone_number }}</td>
-                                    <td>{{ collector.address }}</td>
-                                    <td>
-                                        {% if collector.user.is_active %}
-                                        <span class="badge bg-success">Active</span>
-                                        {% else %}
-                                        <span class="badge bg-danger">Inactive</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>₱{{ collector.total_sales|default:"0.00"|floatformat:2 }}</td>
-                                    <td>{{ collector.created_at|date:"M d, Y" }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted">No collectors found</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            {% include 'monitor_app/_collectors_list_card.html' %}
         </div>
         <div class="col-md-4 col-12 mb-0 mb-md-0 h-100">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-                        <h5 class="card-title mb-0">WiFi Vendos</h5>
-                        <a href="{% url 'monitor_app:add_vendo' %}" class="btn btn-primary btn-sm mt-2 mt-md-0">
-                            <i class="fas fa-plus me-1"></i>Add Vendo
-                        </a>
-                    </div>
-                    <div class="table-responsive dashboard-table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Location</th>
-                                    <th>Status</th>
-                                    <th>Total Sales</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for vendo in wifi_vendos %}
-                                <tr>
-                                    <td>{{ vendo.name }}</td>
-                                    <td>{{ vendo.location }}</td>
-                                    <td>
-                                        {% if vendo.status == 'active' %}
-                                        <span class="badge bg-success">Active</span>
-                                        {% elif vendo.status == 'maintenance' %}
-                                        <span class="badge bg-warning">Maintenance</span>
-                                        {% else %}
-                                        <span class="badge bg-danger">Inactive</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>₱{{ vendo.total_sales|default:"0.00"|floatformat:2 }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">No WiFi vendos found</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            {% include 'monitor_app/_wifi_vendos_list_card.html' %}
         </div>
         {% endif %}
     </div>
@@ -352,61 +246,66 @@
         const chartElement = document.getElementById('salesChart');
         const chartTypeBar = document.getElementById('chartTypeBar');
         const chartTypeLine = document.getElementById('chartTypeLine');
+        const monthFilter = document.getElementById('monthFilter');
         
         if (chartElement) {
             const ctx = chartElement.getContext('2d');
             let chart = null;
-            
+            let originalData = {};
+            let originalLabels = [];
+            let originalSales = [];
+
             try {
                 const monthlyData = {{ monthly_sales_json|safe }};
-                console.log('Monthly data:', monthlyData);
                 
                 if (!monthlyData || Object.keys(monthlyData).length === 0) {
-                    console.log('No monthly data available');
                     document.getElementById('salesChart').style.display = 'none';
                     document.getElementById('chartMessage').style.display = 'block';
                     return;
                 }
                 
-                // Sort the months chronologically (January to December)
                 const sortedEntries = Object.entries(monthlyData).sort((a, b) => {
                     return new Date(a[0]) - new Date(b[0]);
                 });
                 
-                const labels = sortedEntries.map(entry => entry[0]);
-                const data = sortedEntries.map(entry => parseFloat(entry[1]) || 0);
-                
-                console.log('Chart labels:', labels);
-                console.log('Chart data:', data);
-                
-                // Create gradient for better visual appeal
-                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                gradient.addColorStop(0, 'rgba(52, 152, 219, 0.8)');
-                gradient.addColorStop(1, 'rgba(52, 152, 219, 0.2)');
-                
-                const lineGradient = ctx.createLinearGradient(0, 0, 0, 400);
-                lineGradient.addColorStop(0, 'rgba(46, 204, 113, 0.8)');
-                lineGradient.addColorStop(1, 'rgba(46, 204, 113, 0.2)');
-                
-                function createChart(type = 'bar') {
+                originalLabels = sortedEntries.map(entry => entry[0]);
+                originalSales = sortedEntries.map(entry => parseFloat(entry[1]) || 0);
+
+                // Populate month filter
+                originalLabels.forEach(label => {
+                    const option = document.createElement('option');
+                    option.value = label;
+                    option.textContent = label;
+                    monthFilter.appendChild(option);
+                });
+
+                function updateChart(chartType, displayLabels, displayData) {
                     if (chart) {
                         chart.destroy();
                     }
+
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, 'rgba(52, 152, 219, 0.8)');
+                    gradient.addColorStop(1, 'rgba(52, 152, 219, 0.2)');
                     
+                    const lineGradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    lineGradient.addColorStop(0, 'rgba(46, 204, 113, 0.8)');
+                    lineGradient.addColorStop(1, 'rgba(46, 204, 113, 0.2)');
+
                     const config = {
-                        type: type,
+                        type: chartType,
                         data: {
-                            labels: labels,
+                            labels: displayLabels,
                             datasets: [{
                                 label: 'Monthly Profit (₱)',
-                                data: data,
-                                backgroundColor: type === 'bar' ? gradient : 'rgba(52, 152, 219, 0.8)',
-                                borderColor: type === 'bar' ? 'rgba(52, 152, 219, 1)' : 'rgba(46, 204, 113, 1)',
-                                borderWidth: type === 'bar' ? 2 : 3,
-                                borderRadius: type === 'bar' ? 8 : 0,
+                                data: displayData,
+                                backgroundColor: chartType === 'bar' ? gradient : 'rgba(52, 152, 219, 0.8)',
+                                borderColor: chartType === 'bar' ? 'rgba(52, 152, 219, 1)' : 'rgba(46, 204, 113, 1)',
+                                borderWidth: chartType === 'bar' ? 2 : 3,
+                                borderRadius: chartType === 'bar' ? 8 : 0,
                                 borderSkipped: false,
-                                fill: type === 'line' ? true : false,
-                                tension: type === 'line' ? 0.4 : 0,
+                                fill: chartType === 'line' ? true : false,
+                                tension: chartType === 'line' ? 0.4 : 0,
                                 pointBackgroundColor: 'rgba(46, 204, 113, 1)',
                                 pointBorderColor: '#fff',
                                 pointBorderWidth: 2,
@@ -428,30 +327,16 @@
                             scales: {
                                 y: {
                                     beginAtZero: true,
-                                    grid: {
-                                        color: 'rgba(0, 0, 0, 0.1)',
-                                        drawBorder: false
-                                    },
+                                    grid: { color: 'rgba(0, 0, 0, 0.1)', drawBorder: false },
                                     ticks: {
-                                        callback: function(value) {
-                                            return '₱' + value.toLocaleString('en-US', {
-                                                minimumFractionDigits: 0,
-                                                maximumFractionDigits: 0
-                                            });
-                                        },
-                                        font: {
-                                            size: window.innerWidth < 768 ? 10 : 12
-                                        }
+                                        callback: value => '₱' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+                                        font: { size: window.innerWidth < 768 ? 10 : 12 }
                                     }
                                 },
                                 x: {
-                                    grid: {
-                                        display: false
-                                    },
+                                    grid: { display: false },
                                     ticks: {
-                                        font: {
-                                            size: window.innerWidth < 768 ? 10 : 12
-                                        },
+                                        font: { size: window.innerWidth < 768 ? 10 : 12 },
                                         maxRotation: window.innerWidth < 768 ? 45 : 0,
                                         minRotation: window.innerWidth < 768 ? 45 : 0
                                     }
@@ -464,9 +349,7 @@
                                     labels: {
                                         usePointStyle: true,
                                         padding: window.innerWidth < 768 ? 10 : 20,
-                                        font: {
-                                            size: window.innerWidth < 768 ? 12 : 14
-                                        }
+                                        font: { size: window.innerWidth < 768 ? 12 : 14 }
                                     }
                                 },
                                 tooltip: {
@@ -478,15 +361,8 @@
                                     cornerRadius: 8,
                                     displayColors: false,
                                     callbacks: {
-                                        title: function(context) {
-                                            return context[0].label;
-                                        },
-                                        label: function(context) {
-                                            return 'Total Profit: ₱' + context.parsed.y.toLocaleString('en-US', {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2
-                                            });
-                                        }
+                                        title: context => context[0].label,
+                                        label: context => 'Total Profit: ₱' + context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                                     }
                                 }
                             }
@@ -495,32 +371,38 @@
                     
                     chart = new Chart(ctx, config);
                 }
-                
-                // Initialize with bar chart
-                createChart('bar');
-                
-                // Chart type toggle functionality
-                if (chartTypeBar && chartTypeLine) {
-                    chartTypeBar.addEventListener('click', function() {
-                        createChart('bar');
-                        chartTypeBar.classList.add('active');
-                        chartTypeLine.classList.remove('active');
-                    });
-                    
-                    chartTypeLine.addEventListener('click', function() {
-                        createChart('line');
-                        chartTypeLine.classList.add('active');
-                        chartTypeBar.classList.remove('active');
-                    });
-                }
-                
-                // Responsive chart resizing
-                window.addEventListener('resize', function() {
-                    if (chart) {
-                        chart.resize();
+
+                function filterChart() {
+                    const selectedMonth = monthFilter.value;
+                    const chartType = chartTypeBar.classList.contains('active') ? 'bar' : 'line';
+
+                    if (selectedMonth) {
+                        const monthIndex = originalLabels.indexOf(selectedMonth);
+                        if (monthIndex > -1) {
+                            updateChart(chartType, [originalLabels[monthIndex]], [originalSales[monthIndex]]);
+                        }
+                    } else {
+                        updateChart(chartType, originalLabels, originalSales);
                     }
+                }
+
+                // Initial chart creation
+                updateChart('bar', originalLabels, originalSales);
+
+                // Event Listeners
+                monthFilter.addEventListener('change', filterChart);
+                chartTypeBar.addEventListener('click', () => {
+                    chartTypeBar.classList.add('active');
+                    chartTypeLine.classList.remove('active');
+                    filterChart();
                 });
-                
+                chartTypeLine.addEventListener('click', () => {
+                    chartTypeLine.classList.add('active');
+                    chartTypeBar.classList.remove('active');
+                    filterChart();
+                });
+                window.addEventListener('resize', () => chart && chart.resize());
+
             } catch (error) {
                 console.error('Error initializing chart:', error);
                 chartElement.parentElement.innerHTML = '<p class="text-muted text-center">Unable to load chart data</p>';

@@ -1,0 +1,44 @@
+<div class="card h-100">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <h5 class="card-title mb-0">WiFi Vendos</h5>
+            <a href="{% url 'monitor_app:add_vendo' %}" class="btn btn-primary btn-sm mt-2 mt-md-0">
+                <i class="fas fa-plus me-1"></i>Add Vendo
+            </a>
+        </div>
+        <div class="table-responsive dashboard-table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Total Sales</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vendo in wifi_vendos %}
+                    <tr>
+                        <td>{{ vendo.name }}</td>
+                        <td>{{ vendo.location }}</td>
+                        <td>
+                            {% if vendo.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                            {% elif vendo.status == 'maintenance' %}
+                            <span class="badge bg-warning">Maintenance</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>₱{{ vendo.total_sales|default:"0.00"|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No WiFi vendos found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
