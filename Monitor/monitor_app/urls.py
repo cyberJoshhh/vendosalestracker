@@ -16,4 +16,5 @@ urlpatterns = [
     path('recent-sales/', views.recent_sales_view, name='recent_sales'),
     path('collectors/', views.collectors_list_view, name='collectors_list'),
     path('wifi-vendos/', views.wifi_vendos_list_view, name='wifi_vendos_list'),
+    path('toggle-collector-status/', views.toggle_collector_status, name='toggle_collector_status'),
 ]

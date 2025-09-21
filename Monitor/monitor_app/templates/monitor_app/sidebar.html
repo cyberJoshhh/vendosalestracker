@@ -24,9 +24,11 @@
     </div>
 
     <!-- Sidebar Content -->
+    
     <div class="sidebar-content">
         <div class="sidebar-nav">
             <!-- Navigation Groups -->
+            {% if user.is_staff %}
             <div class="nav-group">
                 <div class="nav-group-label">Main</div>
                 <ul class="nav flex-column">
@@ -42,7 +44,7 @@
                     </li>
                 </ul>
             </div>
-
+            {% endif %}
             {% if user.is_staff %}
             <div class="nav-group">
                 <div class="nav-group-label">Management</div>
@@ -100,7 +102,7 @@
                 </ul>
             </div>
             {% endif %}
-
+            
             <div class="nav-group">
                 <div class="nav-group-label">Operations</div>
                 <ul class="nav flex-column">

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 from django.db.models import Sum, Count, DecimalField
 from django.db.models.functions import Coalesce
 from django.utils import timezone
@@ -11,7 +12,9 @@ from .models import WifiVendo, Collector, SalesRecord
 from .forms import SalesRecordForm, CollectorForm, WifiVendoForm
 from django.db.models.functions import TruncMonth
 from django.utils.timezone import localtime
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 
 def index(request):
@@ -37,7 +40,15 @@ def login_view(request):
             else:
                 return redirect('monitor_app:dashboard')
         else:
-            messages.error(request, 'Invalid username or password.')
+            # Check if user exists but is disabled
+            try:
+                existing_user = User.objects.get(username=username)
+                if not existing_user.is_active:
+                    messages.error(request, 'Your account has been disabled. Please contact an administrator for assistance.')
+                else:
+                    messages.error(request, 'Invalid username or password.')
+            except User.DoesNotExist:
+                messages.error(request, 'Invalid username or password.')
 
     return render(request, 'monitor_app/login.html')
 
@@ -440,3 +451,46 @@ def wifi_vendos_list_view(request):
         total_sales=Sum(Coalesce('salesrecord__overall_profit', 0, output_field=DecimalField()))
     )
     return render(request, 'monitor_app/wifi_vendos_list.html', {'wifi_vendos': wifi_vendos})
+
+@login_required
+@require_http_methods(["POST"])
+def toggle_collector_status(request):
+    """
+    Toggle collector status (enable/disable login)
+    Only staff users can perform this action
+    """
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'You do not have permission to perform this action.'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        collector_id = data.get('collector_id')
+        action = data.get('action')
+        
+        if not collector_id or not action:
+            return JsonResponse({'success': False, 'message': 'Missing required parameters.'}, status=400)
+        
+        if action not in ['enable', 'disable']:
+            return JsonResponse({'success': False, 'message': 'Invalid action. Must be "enable" or "disable".'}, status=400)
+        
+        try:
+            collector = Collector.objects.get(id=collector_id)
+        except Collector.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Collector not found.'}, status=404)
+        
+        # Update the user's is_active status
+        if action == 'disable':
+            collector.user.is_active = False
+            message = f'Collector {collector.user.get_full_name()} has been disabled.'
+        else:  # enable
+            collector.user.is_active = True
+            message = f'Collector {collector.user.get_full_name()} has been enabled.'
+        
+        collector.user.save()
+        
+        return JsonResponse({'success': True, 'message': message})
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON data.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)

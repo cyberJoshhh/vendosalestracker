@@ -19,6 +19,7 @@
                         <th>Status</th>
                         <th>Total Sales</th>
                         <th>Joined Date</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -36,10 +37,22 @@
                         </td>
                         <td>₱{{ collector.total_sales|default:"0.00"|floatformat:2 }}</td>
                         <td>{{ collector.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% if request.user.is_staff %}
+                                <button class="btn btn-sm {% if collector.user.is_active %}btn-danger{% else %}btn-success{% endif %}" 
+                                        data-collector-id="{{ collector.id }}"
+                                        data-is-active="{% if collector.user.is_active %}true{% else %}false{% endif %}"
+                                        onclick="toggleCollectorStatus(this)"
+                                        id="toggle-btn-{{ collector.id }}">
+                                    <i class="fas {% if collector.user.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                                    {% if collector.user.is_active %}Disable{% else %}Enable{% endif %}
+                                </button>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted">No collectors found</td>
+                        <td colspan="7" class="text-center text-muted">No collectors found</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -47,3 +60,53 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleCollectorStatus(button) {
+    const collectorId = button.getAttribute('data-collector-id');
+    const isCurrentlyActive = button.getAttribute('data-is-active');
+    const action = (isCurrentlyActive === 'true') ? 'disable' : 'enable';
+    const confirmMessage = `Are you sure you want to ${action} this collector?`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Show loading state
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    button.disabled = true;
+    
+    // Make AJAX request
+    fetch(`{% url 'monitor_app:toggle_collector_status' %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            'collector_id': collectorId,
+            'action': action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the page to show updated status
+            location.reload();
+        } else {
+            alert(data.message || 'An error occurred while updating the collector status.');
+            // Restore button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the collector status.');
+        // Restore button state
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+</script>

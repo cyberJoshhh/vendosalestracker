@@ -60,6 +60,16 @@
         .alert {
             border-radius: 10px;
         }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .alert-danger .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
     </style>
 </head>
 <body>
@@ -74,7 +84,13 @@
                 {% if messages %}
                     {% for message in messages %}
                         <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
+                            {% if 'disabled' in message|lower %}
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Account Disabled:</strong> {{ message }}
+                            {% else %}
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                {{ message }}
+                            {% endif %}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     {% endfor %}
